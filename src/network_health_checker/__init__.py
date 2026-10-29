@@ -2,8 +2,8 @@
 
 This prototype loads a text file of 1-20 candidate IPv4 addresses (R1),
 marks invalid entries (R2), pings the valid ones (R3, R4) and counts the
-results (R7). CSV export (R6) is not implemented, and the five-second
-performance target (R5) has not been formally verified.
+results (R7). The five-second performance target (R5) was measured on
+Linux (see README.md). CSV export (R6) is not implemented.
 """
 
 from .loader import MAX_ENTRIES, InputFileError, load_targets

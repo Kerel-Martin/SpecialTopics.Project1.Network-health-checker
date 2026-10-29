@@ -58,6 +58,15 @@ Network Health Checker — Project 1, Milestones 1 and 2
   - R6: CSV export is not implemented.
   - Windows: when this entry was written, the tests had not been run on Windows. On 29 October 2026 the team ran them on a Windows laptop and all passed; see README.md.
 
+#### Follow-up, 29 October 2026: performance check (R5 / AC5)
+
+- **What was asked:** The team asked whether R5 was done because the tests had passed. The AI explained that it was not: AC5 needs 20 valid addresses, scanned 3 times, with each run's duration recorded under documented conditions. The earlier scans used fewer addresses and only one run each. The team then asked the AI to carry out AC5.
+- **What the AI produced:**
+  - `data/performance_targets.txt`: 20 valid addresses on the team's own home network. It mixes real devices with unused addresses, so it includes the slowest case, where an address never replies.
+  - A "Performance check (AC5 / R5)" section in README.md, with the test conditions and the three results.
+- **How it was verified:** The AI ran `python src/main.py data/performance_targets.txt` 3 times on Ubuntu 24.04 with Python 3.12.3 over home Wi-Fi. Scan times were 1.01 s, 1.01 s and 1.00 s (1.05–1.06 s including Python start-up), each with 5 UP and 15 DOWN.
+- **Still not claimed:** AC5 has not yet been measured on Windows. CSV export (R6) is still not implemented.
+
 ## Future Updates
 
 Add an entry whenever another AI tool is used. Record the tool name, date, purpose, affected files or code, and how its output was checked.

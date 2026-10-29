@@ -41,7 +41,7 @@ This prototype loads a text file of candidate IPv4 addresses, marks invalid entr
 | R2 — Input validation (INVALID entries are not pinged) | **Implemented and tested** |
 | R3 — UP / DOWN reachability | **Implemented and tested** |
 | R4 — Response time in ms, or "No reply" | **Implemented and tested** |
-| R5 — 20 addresses within 5 seconds | Pings run concurrently with a bounded timeout and the scan time is printed, but the AC5 measurement (20 valid addresses, 3 runs, documented conditions) **has not been done yet**, so R5 is **not claimed** |
+| R5 — 20 addresses within 5 seconds | **Implemented and measured on Linux** (AC5: 3 runs of 20 valid addresses, about 1.0 s each; see "Performance check" below). Not yet measured on Windows |
 | R6 — CSV export | **Not implemented** |
 | R7 — Summary counts | **Implemented and tested** |
 
@@ -66,6 +66,7 @@ src/
     gui.py            Optional Tkinter window (an optional enhancement in SPEC.md)
 data/
   sample_targets.txt  Small sample with valid and invalid entries
+  performance_targets.txt  20 valid addresses for the AC5 performance check
 tests/                Automated tests (unittest)
 ```
 
@@ -230,3 +231,58 @@ Scan time: 1.00 s
 - `192.168.18.225` answered ping from the Windows laptop in an earlier test, but gave no reply from the Linux laptop, even with 5 pings and a 2-second timeout. It also did not answer at the network (ARP) level, so the device was most likely asleep or disconnected at that moment. This matches SPEC.md: DOWN means no reply within the timeout, not that the device is broken.
 - `192.168.166` has only 3 octets, so it was correctly marked INVALID and not pinged.
 - Wi-Fi response times vary a lot (for example 3 ms to 397 ms) because of device power saving.
+
+### Performance check (AC5 / R5)
+
+**Test list:** `data/performance_targets.txt` contains 20 valid IPv4 addresses on the team's own home network (`192.168.18.0/24`):
+
+- the router (`.1`)
+- the team's devices (`.17`, `.20`, `.69`, `.166`, `.173`, `.225`)
+- 13 unused addresses (`.200`–`.212`)
+
+The unused addresses are included on purpose. They never reply, so each one waits for the full timeout, which is the slowest case for a scan. SPEC.md allows addresses that do not respond, on an authorized network.
+
+**Test conditions:**
+
+| | |
+|---|---|
+| Computer | Linux laptop at `192.168.18.166` |
+| Operating system | Ubuntu 24.04.4 LTS |
+| Python | 3.12.3 |
+| Connection | Home Wi-Fi |
+| Ping timeout | 1000 ms (the default) |
+| Date | 29 October 2026 |
+
+**Command, run 3 times:**
+
+```bash
+python src/main.py data/performance_targets.txt
+```
+
+**Results:**
+
+| Run | Scan time (printed by the app) | Total incl. Python start-up | UP | DOWN | Within 5 s? |
+|---|---|---|---|---|---|
+| 1 | 1.01 s | 1.06 s | 5 | 15 | Yes |
+| 2 | 1.01 s | 1.05 s | 5 | 15 | Yes |
+| 3 | 1.00 s | 1.05 s | 5 | 15 | Yes |
+
+**AC5 result on Linux: passed.** All three scans of 20 valid addresses finished in about 1 second, well under the 5-second target.
+
+A scan takes about one timeout because all 20 pings are sent at the same time. Sent one after another, the 15 non-responding addresses alone would take about 15 seconds.
+
+The UP addresses were:
+
+- `.1` (router)
+- `.20` (Windows laptop)
+- `.166` (this laptop)
+- `.173`
+- `.225`
+
+`.225` replied this time although it did not in the earlier check, which confirms that the device had been asleep then.
+
+**Windows:** AC5 has not yet been measured on Windows, which is the platform SPEC.md requires. To measure it, run the same command 3 times in PowerShell and record each "Scan time" here:
+
+```powershell
+python src\main.py data\performance_targets.txt
+```
