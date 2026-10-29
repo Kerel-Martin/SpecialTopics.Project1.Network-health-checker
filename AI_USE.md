@@ -56,7 +56,7 @@ Network Health Checker — Project 1, Milestones 1 and 2
 - **Still not claimed:**
   - R5: the AC5 measurement (20 valid addresses, 3 runs, documented conditions) has not been done.
   - R6: CSV export is not implemented.
-  - Windows: the tests have not been run on Windows. The Windows ping parsing is tested only against saved example output.
+  - Windows: when this entry was written, the tests had not been run on Windows. On 29 October 2026 the team ran them on a Windows laptop and all passed; see README.md.
 
 ## Future Updates
 

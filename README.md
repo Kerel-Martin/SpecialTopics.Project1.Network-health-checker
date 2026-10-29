@@ -203,4 +203,30 @@ OK
 
 The GUI was also opened by hand with `data/sample_targets.txt` and showed the same UP/DOWN/INVALID results and counts as the command-line version.
 
-**Not yet done:** the tests have not been run on Windows. Run them there with the command above and record the result here. Real Windows ping output is only covered by the saved examples in `tests/test_pinger.py`.
+**Windows:** the team cloned the repository on a second laptop running Windows and ran `python -m unittest -v` in PowerShell on 29 October 2026. All tests passed (`OK`), including the two real-ping tests, which use the Windows `ping` command there. The prototype was also run on Windows against devices on the home network.
+
+### Real-network check (AC3 / AC4)
+
+Run on 29 October 2026 from the Linux laptop (`192.168.18.166`) on the home Wi-Fi network `192.168.18.0/24`. The input file listed the team's own devices:
+
+```text
+IP Address        Status    Response Time
+192.168.18.20     UP        3.05 ms
+192.168.18.225    DOWN      No reply
+192.168.166       INVALID   Not checked: Expected 4 octets in '192.168.166'
+192.168.18.166    UP        0.023 ms
+192.168.18.173    UP        397 ms
+
+Input entries: 5
+Valid addresses checked: 4
+UP: 3
+DOWN: 1
+Invalid: 1
+Scan time: 1.00 s
+```
+
+- `192.168.18.20` is the team's second laptop (Windows). It became UP after an inbound firewall rule allowing ICMPv4 echo requests was added; before that it was DOWN even though it was on the network.
+- `192.168.18.166` is the laptop running the scan, which is why its response time is so short.
+- `192.168.18.225` answered ping from the Windows laptop in an earlier test, but gave no reply from the Linux laptop, even with 5 pings and a 2-second timeout. It also did not answer at the network (ARP) level, so the device was most likely asleep or disconnected at that moment. This matches SPEC.md: DOWN means no reply within the timeout, not that the device is broken.
+- `192.168.166` has only 3 octets, so it was correctly marked INVALID and not pinged.
+- Wi-Fi response times vary a lot (for example 3 ms to 397 ms) because of device power saving.
