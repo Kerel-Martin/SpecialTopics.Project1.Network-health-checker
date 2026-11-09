@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Network Health Checker: CSV exports (R6) contain scan results of local networks
+scan_results*.csv
