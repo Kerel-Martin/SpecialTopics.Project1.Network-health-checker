@@ -62,6 +62,7 @@ src/
     validator.py      R2: check each entry with Python's ipaddress module
     pinger.py         R3/R4: run the system ping command, read UP/DOWN and time
     scanner.py        Ping valid addresses concurrently; R7 summary counts
+    performance.py    R5/AC5: scan 3 times, time each run, give PASS/FAIL
     cli.py            Command-line interface (the required interface in SPEC.md)
     gui.py            Optional Tkinter window (an optional enhancement in SPEC.md)
 data/
@@ -95,7 +96,7 @@ If PowerShell says that running scripts is disabled, run this once and then acti
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
-Open the optional Tkinter window. The file is scanned as soon as it is loaded; use **Scan again** to repeat the scan.
+Open the optional Tkinter window. The file is scanned as soon as it is loaded. Use **Scan again** to repeat the scan, or **Performance test (R5)** to scan the file 3 times and see the time of each run and the AC5 result.
 
 ```powershell
 python src\main.py --gui
@@ -193,18 +194,24 @@ Most tests use a fake ping function with fixed answers, so they give the same re
 - **AC4 (R4) — passed.** A real ping to `127.0.0.1` returns a numeric time in ms, and a DOWN address returns no time ("No reply"). Response times are read from Linux output (`time=1.19 ms`), Windows output (`time=2ms`, `time<1ms`, recorded as 1 ms) and non-English Windows output (`Zeit=3ms`).
 - **AC7 (R7) — passed.** `tests/test_scanner.py` and `tests/test_cli.py` check that the counts for the SPEC.md example (4 entries: 2 UP, 1 DOWN, 1 INVALID) are correct.
 - **Concurrency (supports R5, but is not the AC5 test):** 20 simulated pings that each take 0.3 s finish in under 2 s, instead of the 6 s they would take one after another.
+- **Performance test logic (R5):** `tests/test_performance.py` uses a fake clock to check:
+  - that 3 runs are made and each is timed
+  - that a run over 5 s gives FAILED
+  - that fewer than 20 valid addresses, or fewer than 3 runs, is never reported as an AC5 pass
 
-Test result on Ubuntu 24.04 (Linux), Python 3.12.3, with Tkinter installed, 28 October 2026:
+  `tests/test_gui.py` presses the GUI button with a fake ping and checks the feedback.
+
+Test result on Ubuntu 24.04 (Linux), Python 3.12.3, with Tkinter installed, 9 November 2026:
 
 ```text
-Ran 45 tests in 1.630s
+Ran 54 tests in 2.065s
 
 OK
 ```
 
 The GUI was also opened by hand with `data/sample_targets.txt` and showed the same UP/DOWN/INVALID results and counts as the command-line version.
 
-**Windows:** the team cloned the repository on a second laptop running Windows and ran `python -m unittest -v` in PowerShell on 29 October 2026. All tests passed (`OK`), including the two real-ping tests, which use the Windows `ping` command there. The prototype was also run on Windows against devices on the home network.
+**Windows:** the team cloned the repository on a second laptop running Windows and ran `python -m unittest -v` in PowerShell on 29 October 2026, before the performance test button and its 9 tests were added. All tests passed (`OK`), including the two real-ping tests, which use the Windows `ping` command there. The prototype was also run on Windows against devices on the home network.
 
 ### Real-network check (AC3 / AC4)
 
@@ -281,8 +288,30 @@ The UP addresses were:
 
 `.225` replied this time although it did not in the earlier check, which confirms that the device had been asleep then.
 
-**Windows:** AC5 has not yet been measured on Windows, which is the platform SPEC.md requires. To measure it, run the same command 3 times in PowerShell and record each "Scan time" here:
+#### Performance test in the GUI
+
+The GUI has a **Performance test (R5)** button that runs the AC5 procedure on the loaded file:
+
+- it scans the file 3 times and times each run
+- it lists each run as "within 5 s" or "OVER 5 s"
+- it reports **AC5 PASSED** only when the file has exactly 20 valid addresses and all 3 runs finish within 5 s
+
+With fewer than 20 valid addresses it still shows the times, but says the run is not a full AC5 test.
+
+Result on the Linux laptop, 9 November 2026, same conditions as above, with `data/performance_targets.txt`:
+
+```text
+Run 1: 1.03 s (within 5 s)
+Run 2: 1.01 s (within 5 s)
+Run 3: 1.02 s (within 5 s)
+AC5 PASSED: all 3 scans of 20 valid addresses finished within 5 s.
+```
+
+This time 4 addresses were UP and 16 DOWN: the Windows laptop (`.20`) was not replying. The scan time stays about the same whichever devices are awake.
+
+**Windows:** AC5 has not yet been measured on Windows, which is the platform SPEC.md requires. To measure it, either load `data\performance_targets.txt` in the GUI and press **Performance test (R5)**, or run this 3 times in PowerShell and record each "Scan time" here:
 
 ```powershell
+python src\main.py --gui data\performance_targets.txt
 python src\main.py data\performance_targets.txt
 ```

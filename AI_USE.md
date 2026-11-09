@@ -67,6 +67,20 @@ Network Health Checker — Project 1, Milestones 1 and 2
 - **How it was verified:** The AI ran `python src/main.py data/performance_targets.txt` 3 times on Ubuntu 24.04 with Python 3.12.3 over home Wi-Fi. Scan times were 1.01 s, 1.01 s and 1.00 s (1.05–1.06 s including Python start-up), each with 5 UP and 15 DOWN.
 - **Still not claimed:** AC5 has not yet been measured on Windows. CSV export (R6) is still not implemented.
 
+#### Follow-up, 9 November 2026: performance test button in the GUI (R5)
+
+- **What was asked:** Add a button to the GUI that scans 3 times and gives feedback on R5. The team also asked what work remains.
+- **What the AI produced:**
+  - `src/network_health_checker/performance.py`: runs the scan 3 times, times each run and builds the feedback text. AC5 PASSED is reported only with exactly 20 valid addresses and all 3 runs within 5 s.
+  - A **Performance test (R5)** button in `gui.py`. It runs in a background thread, shows "Run N of 3" progress, and shows the per-run times and the verdict below the table.
+  - `tests/test_performance.py`: 7 tests using a fake clock and a fake ping.
+  - 2 new GUI tests in `tests/test_gui.py`.
+  - Updated README.md.
+- **How it was verified:**
+  - `python -m unittest -v` on Ubuntu 24.04 with Python 3.12.3: 54 tests, all passed.
+  - The GUI was opened with `data/performance_targets.txt`, the button was pressed, and the window was checked from a screenshot. Runs took 1.03 s, 1.01 s and 1.02 s, and the window showed "AC5 PASSED".
+- **Still not claimed:** AC5 on Windows has not been measured. CSV export (R6) is not implemented. The tests have not been rerun on Windows since this change.
+
 ## Future Updates
 
 Add an entry whenever another AI tool is used. Record the tool name, date, purpose, affected files or code, and how its output was checked.
