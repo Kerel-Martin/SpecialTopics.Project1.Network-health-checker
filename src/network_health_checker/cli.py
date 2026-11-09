@@ -4,6 +4,7 @@ import argparse
 import sys
 import time
 
+from .exporter import ExportError, export_csv
 from .loader import InputFileError, load_targets
 from .pinger import DEFAULT_TIMEOUT_MS, PingUnavailableError, ping
 from .scanner import describe_response, scan, summarize
@@ -41,6 +42,7 @@ def main(argv=None, ping_func=ping):
         metavar="MS",
         help=f"ping timeout in milliseconds (default {DEFAULT_TIMEOUT_MS})",
     )
+    parser.add_argument("--csv", metavar="FILE", help="also save the results to this CSV file")
     args = parser.parse_args(argv)
 
     if args.timeout <= 0:
@@ -70,4 +72,12 @@ def main(argv=None, ping_func=ping):
     seconds = time.perf_counter() - start
 
     print(format_report(results, seconds))
+
+    if args.csv:
+        try:
+            export_csv(results, args.csv)
+        except ExportError as error:
+            print(f"Error: {error}", file=sys.stderr)
+            return 1
+        print(f"Results saved to {args.csv}")
     return 0

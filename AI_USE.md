@@ -81,6 +81,22 @@ Network Health Checker — Project 1, Milestones 1 and 2
   - The GUI was opened with `data/performance_targets.txt`, the button was pressed, and the window was checked from a screenshot. Runs took 1.03 s, 1.01 s and 1.02 s, and the window showed "AC5 PASSED".
 - **Still not claimed:** AC5 on Windows has not been measured. CSV export (R6) is not implemented. The tests have not been rerun on Windows since this change.
 
+#### Follow-up, 9 November 2026: CSV export (R6)
+
+- **What was asked:** Add a GUI button that exports the results to CSV (R6).
+- **What the AI produced:**
+  - `src/network_health_checker/exporter.py`: writes the SPEC.md columns `ip_address,status,response_time_ms`, with an empty time for DOWN and INVALID rows. It uses `newline=""` and UTF-8 with a byte-order mark so the file opens cleanly in Excel on Windows, and it turns file errors into a clear message.
+  - An **Export CSV...** button in `gui.py`. It is only enabled after a scan has finished and uses a "Save as" dialog.
+  - A `--csv FILE` option in `cli.py`. It was added because SPEC.md makes the command line the required interface.
+  - `tests/test_exporter.py`: 6 tests.
+  - 2 new CLI tests and 1 new GUI test.
+  - Updated README.md.
+- **How it was verified:**
+  - `python -m unittest -v` on Ubuntu 24.04 with Python 3.12.3: 63 tests, all passed.
+  - A real export of `data/sample_targets.txt` from the command line. The CSV was read back and matched the scan output.
+  - The GUI export, checked with a screenshot and by reading the saved file.
+- **Still not claimed:** AC5 on Windows has not been measured. The CSV export and the new tests have not yet been run on Windows.
+
 ## Future Updates
 
 Add an entry whenever another AI tool is used. Record the tool name, date, purpose, affected files or code, and how its output was checked.

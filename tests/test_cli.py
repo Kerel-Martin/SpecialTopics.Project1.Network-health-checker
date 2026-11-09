@@ -52,6 +52,32 @@ class CliTests(unittest.TestCase):
             self.assertIn(line, out)
         self.assertIn("Scan time:", out)
 
+    def test_csv_option_saves_results(self):
+        path = self.write_file(["192.168.1.1", "192.168.1.20", "192.168.1.999"])
+        csv_path = Path(self.temp_dir.name) / "out.csv"
+        code, out, _ = run_cli(path, "--csv", str(csv_path), ping_func=FakePing({"192.168.1.1": 2.4}))
+
+        self.assertEqual(code, 0)
+        self.assertIn(f"Results saved to {csv_path}", out)
+        lines = csv_path.read_text(encoding="utf-8-sig").splitlines()
+        self.assertEqual(
+            lines,
+            [
+                "ip_address,status,response_time_ms",
+                "192.168.1.1,UP,2.4",
+                "192.168.1.20,DOWN,",
+                "192.168.1.999,INVALID,",
+            ],
+        )
+
+    def test_csv_to_missing_folder_prints_error(self):
+        path = self.write_file(["192.168.1.1"])
+        bad = Path(self.temp_dir.name) / "missing" / "out.csv"
+        code, out, err = run_cli(path, "--csv", str(bad))
+        self.assertEqual(code, 1)
+        self.assertIn("IP Address", out)  # the scan results are still shown
+        self.assertIn("Could not write", err)
+
     def test_too_many_entries_prints_error(self):
         path = self.write_file([f"10.0.0.{i}" for i in range(1, 22)])
         code, out, err = run_cli(path)

@@ -83,8 +83,31 @@ class GuiTests(unittest.TestCase):
 
         window = CheckerWindow(self.root, ping_func=FakePing())
         self.assertTrue(window.performance_button.instate(["disabled"]))
+        self.assertTrue(window.export_button.instate(["disabled"]))
         window.start_performance_test()
         self.assertFalse(window.busy)
+        self.assertFalse(window.export_to(str(self.temp_path / "nothing.csv")))
+
+    def test_export_button_saves_the_scan_results(self):
+        from network_health_checker.gui import CheckerWindow
+
+        window = CheckerWindow(self.root, ping_func=FakePing({"192.168.1.1": 2.4}))
+        window.load_file(str(self.path))
+        self.wait_until_idle(window)
+        self.assertTrue(window.export_button.instate(["!disabled"]))
+
+        csv_path = self.temp_path / "results.csv"
+        self.assertTrue(window.export_to(str(csv_path)))
+        self.assertEqual(
+            csv_path.read_text(encoding="utf-8-sig").splitlines(),
+            [
+                "ip_address,status,response_time_ms",
+                "192.168.1.1,UP,2.4",
+                "192.168.1.20,DOWN,",
+                "192.168.1.999,INVALID,",
+            ],
+        )
+        self.assertIn("Results saved to", window.performance_label.cget("text"))
 
 
 if __name__ == "__main__":

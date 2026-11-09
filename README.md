@@ -42,7 +42,7 @@ This prototype loads a text file of candidate IPv4 addresses, marks invalid entr
 | R3 — UP / DOWN reachability | **Implemented and tested** |
 | R4 — Response time in ms, or "No reply" | **Implemented and tested** |
 | R5 — 20 addresses within 5 seconds | **Implemented and measured on Linux** (AC5: 3 runs of 20 valid addresses, about 1.0 s each; see "Performance check" below). Not yet measured on Windows |
-| R6 — CSV export | **Not implemented** |
+| R6 — CSV export | **Implemented and tested** (GUI **Export CSV...** button and `--csv` option on the command line) |
 | R7 — Summary counts | **Implemented and tested** |
 
 A **valid** address is one written in correct IPv4 format. Whether it is **UP** or **DOWN** depends only on whether it answers ping. As SPEC.md says, DOWN means no reply arrived within the timeout. The device may still be switched on but blocking ping with a firewall; Windows blocks ping by default.
@@ -63,6 +63,7 @@ src/
     pinger.py         R3/R4: run the system ping command, read UP/DOWN and time
     scanner.py        Ping valid addresses concurrently; R7 summary counts
     performance.py    R5/AC5: scan 3 times, time each run, give PASS/FAIL
+    exporter.py       R6: save results to a CSV file
     cli.py            Command-line interface (the required interface in SPEC.md)
     gui.py            Optional Tkinter window (an optional enhancement in SPEC.md)
 data/
@@ -96,7 +97,7 @@ If PowerShell says that running scripts is disabled, run this once and then acti
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
-Open the optional Tkinter window. The file is scanned as soon as it is loaded. Use **Scan again** to repeat the scan, or **Performance test (R5)** to scan the file 3 times and see the time of each run and the AC5 result.
+Open the optional Tkinter window. The file is scanned as soon as it is loaded. Use **Scan again** to repeat the scan, or **Performance test (R5)** to scan the file 3 times and see the time of each run and the AC5 result. After a scan, **Export CSV...** saves the results shown in the table to a CSV file of your choice.
 
 ```powershell
 python src\main.py --gui
@@ -107,6 +108,12 @@ Change the ping timeout (default 1000 ms):
 
 ```powershell
 python src\main.py data\sample_targets.txt --timeout 500
+```
+
+Save the results to a CSV file as well (R6):
+
+```powershell
+python src\main.py data\sample_targets.txt --csv scan_results.csv
 ```
 
 Run the automated tests:
@@ -204,7 +211,7 @@ Most tests use a fake ping function with fixed answers, so they give the same re
 Test result on Ubuntu 24.04 (Linux), Python 3.12.3, with Tkinter installed, 9 November 2026:
 
 ```text
-Ran 54 tests in 2.065s
+Ran 63 tests in 2.212s
 
 OK
 ```
@@ -212,6 +219,50 @@ OK
 The GUI was also opened by hand with `data/sample_targets.txt` and showed the same UP/DOWN/INVALID results and counts as the command-line version.
 
 **Windows:** the team cloned the repository on a second laptop running Windows and ran `python -m unittest -v` in PowerShell on 29 October 2026, before the performance test button and its 9 tests were added. All tests passed (`OK`), including the two real-ping tests, which use the Windows `ping` command there. The prototype was also run on Windows against devices on the home network.
+
+### CSV export check (AC6 / R6)
+
+The CSV file has the columns from SPEC.md Section 5:
+
+- `ip_address`: the original text, so INVALID entries keep what was typed
+- `status`: `UP`, `DOWN` or `INVALID`
+- `response_time_ms`: empty for DOWN and INVALID
+
+It is saved as UTF-8 with a byte-order mark, so Excel opens it correctly, and without blank lines between rows on Windows.
+
+**Automated tests** in `tests/test_exporter.py`, `tests/test_cli.py` and `tests/test_gui.py` check:
+
+- the SPEC.md example (2 UP, 1 DOWN, 1 INVALID), which is written exactly as `192.168.1.1,UP,2.4` … `192.168.1.999,INVALID,`
+- that every entry appears once and in input order
+- that text containing a comma is quoted safely
+- that saving to a folder that does not exist gives a clear error rather than a crash
+- that the `--csv` option works
+- that the GUI **Export CSV...** button stays disabled until a scan has finished, then saves the same rows
+
+**AC6 result: passed.**
+
+Real export on the home network, 9 November 2026:
+
+```bash
+python src/main.py data/sample_targets.txt --csv scan_results.csv
+```
+
+```text
+ip_address,status,response_time_ms
+192.168.1.1,DOWN,
+192.168.1.10,DOWN,
+192.168.1.20,DOWN,
+192.168.1.999,INVALID,
+192.168.18.20,DOWN,
+192.168.18.69,DOWN,
+192.168.18.173,UP,243
+10.0.0.256,INVALID,
+hello,INVALID,
+192.168.01.5,INVALID,
+8.8.8.8,UP,42.8
+```
+
+The GUI **Export CSV...** button was also used with the same file, and it saved the rows shown in the window.
 
 ### Real-network check (AC3 / AC4)
 

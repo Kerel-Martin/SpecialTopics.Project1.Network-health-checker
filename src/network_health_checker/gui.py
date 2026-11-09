@@ -9,6 +9,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from .exporter import ExportError, export_csv
 from .loader import MAX_ENTRIES, InputFileError, load_targets
 from .performance import REQUIRED_RUNS, describe_report, run_performance_test
 from .pinger import DEFAULT_TIMEOUT_MS, PingUnavailableError, ping
@@ -21,6 +22,7 @@ class CheckerWindow:
         self.timeout_ms = timeout_ms
         self.ping_func = ping_func
         self.texts = []
+        self.results = []
         self.busy = False
         # Scans run in a background thread so the window does not freeze.
         # The thread sends (kind, value) messages back through this queue.
@@ -38,6 +40,8 @@ class CheckerWindow:
             top, text="Performance test (R5)", command=self.start_performance_test
         )
         self.performance_button.pack(side="left", padx=(8, 0))
+        self.export_button = ttk.Button(top, text="Export CSV...", command=self.choose_export_path)
+        self.export_button.pack(side="left", padx=(8, 0))
         self.file_label = ttk.Label(top, text=f"No file loaded (max {MAX_ENTRIES} addresses)")
         self.file_label.pack(side="left", padx=8)
         self._set_buttons_enabled(False)
@@ -61,6 +65,9 @@ class CheckerWindow:
         state = ["!disabled"] if enabled else ["disabled"]
         self.scan_button.state(state)
         self.performance_button.state(state)
+        # Export needs finished results, not just a loaded file.
+        export_state = ["!disabled"] if enabled and self.results else ["disabled"]
+        self.export_button.state(export_state)
 
     def choose_file(self):
         path = filedialog.askopenfilename(
@@ -77,6 +84,7 @@ class CheckerWindow:
             messagebox.showerror("Cannot load file", str(error))
             return
         self.texts = texts
+        self.results = []
         self.file_label.config(text=path)
         self.performance_label.config(text="")
         self.start_scan()
@@ -147,8 +155,8 @@ class CheckerWindow:
                 continue
 
             self.busy = False
-            self._set_buttons_enabled(True)
             if kind == "error":
+                self.results = []
                 self.summary_label.config(text="Scan failed.")
                 messagebox.showerror("Cannot ping", str(value))
             elif kind == "scan":
@@ -156,9 +164,33 @@ class CheckerWindow:
             elif kind == "performance":
                 self.show_results(value.last_results)
                 self.performance_label.config(text=describe_report(value))
+            self._set_buttons_enabled(True)
             return
 
+    def choose_export_path(self):
+        path = filedialog.asksaveasfilename(
+            title="Save scan results as CSV",
+            defaultextension=".csv",
+            initialfile="scan_results.csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+        )
+        if path:
+            self.export_to(path)
+
+    def export_to(self, path):
+        """Save the latest results to ``path``; return True on success."""
+        if not self.results:
+            return False
+        try:
+            export_csv(self.results, path)
+        except ExportError as error:
+            messagebox.showerror("Cannot save CSV", str(error))
+            return False
+        self.performance_label.config(text=f"Results saved to {path}")
+        return True
+
     def show_results(self, results):
+        self.results = results
         self.table.delete(*self.table.get_children())
         for result in results:
             self.table.insert(
