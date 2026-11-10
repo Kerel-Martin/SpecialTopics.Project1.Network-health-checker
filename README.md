@@ -41,7 +41,7 @@ This prototype loads a text file of candidate IPv4 addresses, marks invalid entr
 | R2 — Input validation (INVALID entries are not pinged) | **Implemented and tested** |
 | R3 — UP / DOWN reachability | **Implemented and tested** |
 | R4 — Response time in ms, or "No reply" | **Implemented and tested** |
-| R5 — 20 addresses within 5 seconds | **Implemented and measured on Linux** (AC5: 3 runs of 20 valid addresses, about 1.0 s each; see "Performance check" below). Not yet measured on Windows |
+| R5 — 20 addresses within 5 seconds | **Implemented and measured on Linux and Windows** (AC5: 3 runs of 20 valid addresses, about 1.0 s each on Linux and 0.80–0.99 s on Windows; see "Performance check" below) |
 | R6 — CSV export | **Implemented and tested** (GUI **Export CSV...** button and `--csv` option on the command line) |
 | R7 — Summary counts | **Implemented and tested** |
 
@@ -368,11 +368,44 @@ AC5 PASSED: all 3 scans of 20 valid addresses finished within 5 s.
 
 This time 4 addresses were UP and 16 DOWN: the Windows laptop (`.20`) was not replying. The scan time stays about the same whichever devices are awake.
 
-**Windows:** AC5 has not yet been measured on Windows, which is the platform SPEC.md requires. To measure it, either load `data\performance_targets.txt` in the GUI and press **Performance test (R5)**, or run this 3 times in PowerShell and record each "Scan time" here:
+#### Performance check on Windows
+
+SPEC.md requires Windows, so AC5 was also measured there.
+
+**Test conditions:**
+
+| | |
+|---|---|
+| Computer | Windows laptop at `192.168.18.132` |
+| Operating system | Windows 11 Home (10.0.26200) |
+| Python | 3.14.5 |
+| Connection | Home Wi-Fi (`192.168.18.0/24`, router `192.168.18.1`) |
+| Ping timeout | 1000 ms (the default) |
+| Date | 10 November 2026 |
+
+**Command, run 3 times in PowerShell:**
 
 ```powershell
-python src\main.py --gui data\performance_targets.txt
 python src\main.py data\performance_targets.txt
 ```
 
-**Attempt on 10 November 2026 — not a valid AC5 measurement.** The command-line scan was run 3 times on a Windows 11 Home laptop with Python 3.14.5, but the laptop was on a different Wi-Fi network (`10.0.0.0/8`), not the home network `192.168.18.0/24`. Scan times were 0.27 s, 0.22 s and 0.26 s, with all 20 addresses DOWN. The network's gateway answered every ping at once with "Destination net unreachable", so no ping waited for the 1000 ms timeout. That is not the slowest case AC5 is meant to measure, so these times do not count. The app handled this correctly: it counted the "unreachable" replies as DOWN even though `ping` exited with code 0. AC5 on Windows still has to be measured on the home network.
+**Results:**
+
+| Run | Scan time (printed by the app) | Total incl. Python start-up | UP | DOWN | Within 5 s? |
+|---|---|---|---|---|---|
+| 1 | 0.99 s | 1.19 s | 2 | 18 | Yes |
+| 2 | 0.80 s | 0.98 s | 2 | 18 | Yes |
+| 3 | 0.88 s | 1.02 s | 2 | 18 | Yes |
+
+**AC5 result on Windows: passed.** All three scans of 20 valid addresses finished in under 1 second, well under the 5-second target.
+
+This is a valid slowest-case test. A raw `ping -n 1 -w 1000 192.168.18.205` gave "Request timed out", so the non-responding addresses waited for the timeout and were not rejected early. Some scans finished slightly under 1.00 s because the Windows `ping -w` timeout is not exact.
+
+The UP addresses were:
+
+- `.1` (router)
+- `.210`, which was meant to be unused but now has a device on it, probably one that was given that address automatically by the router
+
+The team's other devices (`.17`, `.20`, `.69`, `.166`, `.173`, `.225`) did not reply during this test.
+
+**Earlier attempt on 10 November 2026 — not a valid AC5 measurement.** The command-line scan was run 3 times on a Windows 11 Home laptop with Python 3.14.5, but the laptop was on a different Wi-Fi network (`10.0.0.0/8`), not the home network `192.168.18.0/24`. Scan times were 0.27 s, 0.22 s and 0.26 s, with all 20 addresses DOWN. The network's gateway answered every ping at once with "Destination net unreachable", so no ping waited for the 1000 ms timeout. That is not the slowest case AC5 is meant to measure, so these times do not count. The app handled this correctly: it counted the "unreachable" replies as DOWN even though `ping` exited with code 0. The valid measurement above was made later the same day, once the laptop was on the home network.

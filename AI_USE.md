@@ -104,6 +104,17 @@ Network Health Checker — Project 1, Milestones 1 and 2
 - **How it was checked:** All 63 tests passed. The AC5 runs finished in about 0.25 s, which is faster than the timeout, so the raw `ping` output was checked. It showed that the laptop was not on the home network and that the gateway rejected every ping straight away ("Destination net unreachable").
 - **Still not claimed:** AC5 on Windows has not been measured. The 10 November runs are recorded as invalid because they were not made on the home network.
 
+#### Follow-up, 10 November 2026 (later): new sample address and Windows AC5
+
+- **What was asked:** Add `192.168.18.132` and test it, then run AC5 on Windows and push.
+- **What the AI did:**
+  - Added `192.168.18.132` to `data/sample_targets.txt` (now 12 entries). It is the Windows laptop's own address on the home network, so it was UP with a time under 1 ms.
+  - Ran `python src\main.py data\performance_targets.txt` 3 times on the home network and recorded the results and test conditions in README.md. No code was changed.
+- **How it was checked:**
+  - All 63 tests passed after the sample file change.
+  - A raw `ping` of an unused address gave "Request timed out", which confirmed that this run tested the slowest case. The scans took 0.99 s, 0.80 s and 0.88 s.
+- **Result:** AC5 passed on Windows.
+
 ## Future Updates
 
 Add an entry whenever another AI tool is used. Record the tool name, date, purpose, affected files or code, and how its output was checked.
