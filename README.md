@@ -220,6 +220,14 @@ The GUI was also opened by hand with `data/sample_targets.txt` and showed the sa
 
 **Windows:** the team cloned the repository on a second laptop running Windows and ran `python -m unittest -v` in PowerShell on 29 October 2026, before the performance test button and its 9 tests were added. All tests passed (`OK`), including the two real-ping tests, which use the Windows `ping` command there. The prototype was also run on Windows against devices on the home network.
 
+The full suite was run again on Windows on 10 November 2026, after the performance test and CSV export were added: Windows 11 Home (10.0.26200), Python 3.14.5, `python -m unittest` in PowerShell.
+
+```text
+Ran 63 tests in 2.581s
+
+OK
+```
+
 ### CSV export check (AC6 / R6)
 
 The CSV file has the columns from SPEC.md Section 5:
@@ -366,3 +374,5 @@ This time 4 addresses were UP and 16 DOWN: the Windows laptop (`.20`) was not re
 python src\main.py --gui data\performance_targets.txt
 python src\main.py data\performance_targets.txt
 ```
+
+**Attempt on 10 November 2026 — not a valid AC5 measurement.** The command-line scan was run 3 times on a Windows 11 Home laptop with Python 3.14.5, but the laptop was on a different Wi-Fi network (`10.0.0.0/8`), not the home network `192.168.18.0/24`. Scan times were 0.27 s, 0.22 s and 0.26 s, with all 20 addresses DOWN. The network's gateway answered every ping at once with "Destination net unreachable", so no ping waited for the 1000 ms timeout. That is not the slowest case AC5 is meant to measure, so these times do not count. The app handled this correctly: it counted the "unreachable" replies as DOWN even though `ping` exited with code 0. AC5 on Windows still has to be measured on the home network.

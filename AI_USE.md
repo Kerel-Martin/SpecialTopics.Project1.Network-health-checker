@@ -97,6 +97,13 @@ Network Health Checker — Project 1, Milestones 1 and 2
   - The GUI export, checked with a screenshot and by reading the saved file.
 - **Still not claimed:** AC5 on Windows has not been measured. The CSV export and the new tests have not yet been run on Windows.
 
+#### Follow-up, 10 November 2026: Windows test run and AC5 attempt
+
+- **What was asked:** Run the prototype and the tests on Windows, and do the Windows AC5 step from README.md.
+- **What the AI did:** Ran `python src\main.py data\sample_targets.txt`, `python -m unittest` and 3 runs of `python src\main.py data\performance_targets.txt` in PowerShell on Windows 11 Home with Python 3.14.5. Recorded the results in README.md. No code was changed.
+- **How it was checked:** All 63 tests passed. The AC5 runs finished in about 0.25 s, which is faster than the timeout, so the raw `ping` output was checked. It showed that the laptop was not on the home network and that the gateway rejected every ping straight away ("Destination net unreachable").
+- **Still not claimed:** AC5 on Windows has not been measured. The 10 November runs are recorded as invalid because they were not made on the home network.
+
 ## Future Updates
 
 Add an entry whenever another AI tool is used. Record the tool name, date, purpose, affected files or code, and how its output was checked.
