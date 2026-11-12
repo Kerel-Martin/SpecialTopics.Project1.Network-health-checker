@@ -22,7 +22,9 @@ class GuiTests(unittest.TestCase):
         try:
             self.root = tk.Tk()
         except tk.TclError as error:
-            self.skipTest(f"no display available: {error}")
+            # Do not guess the cause: on Windows this is usually a Tcl/Tk
+            # start-up problem, not a missing display (Bug 1 in TESTING.md).
+            self.skipTest(f"Tkinter could not start: {error}")
         self.root.withdraw()
         self.addCleanup(self.root.destroy)
 
