@@ -43,18 +43,26 @@ def build_ping_command(address, timeout_ms=DEFAULT_TIMEOUT_MS, system=None):
     return ["ping", "-c", "1", "-W", str(seconds), address]
 
 
-def parse_ping_output(returncode, output):
+def parse_ping_output(returncode, output, timeout_ms=None):
     """Turn the exit code and text printed by ping into a PingResult.
 
     Windows reports replies faster than 1 ms as "time<1ms"; that is
     recorded as 1 ms.
+
+    When ``timeout_ms`` is given, a reply slower than the timeout counts as
+    no reply. SPEC.md R3 defines DOWN as "no reply before the configured
+    timeout", but Windows ping still prints replies that arrive after its
+    -w timeout (for example "time=43ms" with -w 10).
     """
     if returncode != 0 or not _REPLY_PATTERN.search(output):
         return PingResult(False)
     match = _TIME_PATTERN.search(output)
     if match is None:
         return PingResult(True)
-    return PingResult(True, float(match.group(1).replace(",", ".")))
+    milliseconds = float(match.group(1).replace(",", "."))
+    if timeout_ms is not None and milliseconds > timeout_ms:
+        return PingResult(False)
+    return PingResult(True, milliseconds)
 
 
 def ping(address, timeout_ms=DEFAULT_TIMEOUT_MS, run=subprocess.run):
@@ -79,4 +87,4 @@ def ping(address, timeout_ms=DEFAULT_TIMEOUT_MS, run=subprocess.run):
     except subprocess.TimeoutExpired:
         return PingResult(False)
 
-    return parse_ping_output(completed.returncode, completed.stdout)
+    return parse_ping_output(completed.returncode, completed.stdout, timeout_ms)
