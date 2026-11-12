@@ -53,7 +53,9 @@ A **valid** address is one written in correct IPv4 format. Whether it is **UP** 
 README.md             Proposal and how to run the prototype
 SPEC.md               Approved specification (unchanged)
 AI_USE.md             AI tool usage log
-requirements.txt      Dependencies (standard library only, nothing to install)
+TESTING.md            Acceptance test results, validation against Windows ping, bug log
+requirements.txt      pytest, for the tests only (the app uses only the standard library)
+pytest.ini            pytest settings
 .gitignore            Ignores .venv/, __pycache__/, .env and other local files
 src/
   main.py             Entry point
@@ -69,13 +71,15 @@ src/
 data/
   sample_targets.txt  Small sample with valid and invalid entries
   performance_targets.txt  20 valid addresses for the AC5 performance check
-tests/                Automated tests (unittest)
+tests/                Automated tests (pytest)
+  test_acceptance.py  One or more tests per acceptance criterion (test_AC1_... to test_AC7_...)
+  validate_against_windows_ping.py  Compares the app with Windows ping (see TESTING.md)
 ```
 
 ### Requirements to run it
 
 - Python 3.10 or newer. Development and testing used Python 3.12.3.
-- No extra packages: only the Python standard library is used.
+- No extra packages for the app itself: it uses only the Python standard library. The tests need pytest, which `pip install -r requirements.txt` installs.
 - The `ping` command. It is built into Windows and Ubuntu.
 - Tkinter, but only for the optional GUI. It is included in the standard Python installer from python.org on Windows. On Ubuntu/Debian, install it with `sudo apt install python3-tk`.
 
@@ -119,7 +123,13 @@ python src\main.py data\sample_targets.txt --csv scan_results.csv
 Run the automated tests:
 
 ```powershell
-python -m unittest -v
+python -m pytest -v
+```
+
+Compare the app with Windows' own `ping` (the validation in TESTING.md):
+
+```powershell
+python tests\validate_against_windows_ping.py
 ```
 
 ### Install and run on Linux (bash)
@@ -133,7 +143,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python src/main.py data/sample_targets.txt
 python src/main.py --gui data/sample_targets.txt
-python -m unittest -v
+python -m pytest -v
 ```
 
 ### Using your own file
@@ -178,6 +188,8 @@ Notes on these results:
 - No device answered at `192.168.18.69`.
 
 ### How the requirements were checked
+
+**Milestone 3:** the full results are in [TESTING.md](TESTING.md). It has a table with a test for every acceptance criterion and its result, the validation against Windows `ping`, and a log of the bugs that were found and fixed. The notes below are from Milestone 2.
 
 Most tests use a fake ping function with fixed answers, so they give the same result on any network. Two tests (`RealPingTests` in `tests/test_pinger.py`) run the real `ping` command.
 

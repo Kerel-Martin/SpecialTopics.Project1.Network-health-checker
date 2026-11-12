@@ -115,6 +115,28 @@ Network Health Checker — Project 1, Milestones 1 and 2
   - A raw `ping` of an unused address gave "Request timed out", which confirmed that this run tested the slowest case. The scans took 0.99 s, 0.80 s and 0.88 s.
 - **Result:** AC5 passed on Windows.
 
+## Milestone 3
+
+### Claude Code (Anthropic, model Claude Opus 5.5) — 12 November 2026: testing, validation and bug fixes
+
+- **What was asked:** Check the Milestone 3 instructions against the repository, then write pytest tests named after each acceptance criterion, validate the app against a trusted tool, and write TESTING.md.
+- **Did we use AI to write tests?** Yes. The AI wrote `tests/test_acceptance.py` (26 pytest tests named `test_AC1_...` to `test_AC7_...`), `tests/validate_against_windows_ping.py` and `pytest.ini`. It also added pytest to `requirements.txt` and drafted TESTING.md and the README changes.
+- **Did we use AI to find bugs?** Yes. The AI found both bugs in the TESTING.md bug log:
+  - **Bug 1:** GUI tests skipped at random under pytest. It was found by running the suite several times and comparing pytest capture modes.
+  - **Bug 2:** replies that arrive after the timeout were counted as UP. It was found by pinging with a very short timeout and comparing the app with Windows `ping`. This bug was in code the AI itself wrote in Milestone 2 (`pinger.py`).
+- **What was changed:**
+  - `src/network_health_checker/pinger.py`: a reply slower than the timeout now counts as DOWN.
+  - `pytest.ini`: Python-level output capture, which fixes Bug 1.
+  - `tests/test_gui.py`: the skip message now shows the real cause.
+  - `requirements.txt`, README.md and TESTING.md.
+- **How the tests themselves were checked:**
+  - The regression test for Bug 2 was run against the old `pinger.py` from git and failed. With the fix, it passes.
+  - Expected values were taken from SPEC.md, from a hand count of `data/sample_targets.txt` and from real Windows `ping` output, not from the program's own output.
+  - Real-ping tests use only addresses with a known answer: `127.0.0.1` always replies, and the documentation range `192.0.2.x` never does.
+  - The full suite was run 6 times: 89 passed every time, with no skips after the fix.
+  - Results were compared with a trusted tool. The app's times matched Windows `ping`'s own statistics exactly, apart from the documented `<1ms` → 1 ms rule. The median difference in the concurrent scan was within ±1 ms. UP/DOWN agreed in 30 of 30 checks, and the validator agreed with Windows `inet_pton` on 20,018 strings.
+- **Still for the team to do:** Review the new tests and the fix. Optionally rerun `tests/validate_against_windows_ping.py` on the home network.
+
 ## Future Updates
 
 Add an entry whenever another AI tool is used. Record the tool name, date, purpose, affected files or code, and how its output was checked.
