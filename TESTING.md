@@ -26,6 +26,25 @@ python -m pytest -v
 
 **Result:** `89 passed, 14 subtests passed in 9.85s`. The suite was run 5 more times after the fixes, and all 89 passed every time with no skips.
 
+### Second platform: Linux
+
+The same suite was also run on Linux at commit `2a06500`:
+
+| | |
+|---|---|
+| Computer | Linux laptop on the home Wi-Fi network |
+| Operating system | Ubuntu 24.04.4 LTS |
+| Python | 3.12.3 |
+| pytest | 9.2.0 |
+| Date | 14 November 2026 |
+
+**Result:** `89 passed in 9.21s`, with no skips or failures. All 26 acceptance tests passed. The real-ping tests used the Linux `ping` command here, and the GUI tests ran with Tkinter (`python3-tk`) installed. Unlike the Windows run, pytest did not print a subtest count on this setup.
+
+Two extra checks were made on Linux:
+
+- **Bug 2 is fixed.** With the fixed code, `python src/main.py <file> --timeout 10` reported `8.8.8.8` (about 42 ms away) as DOWN and `127.0.0.1` as UP.
+- **The regression test catches Bug 2.** In a temporary copy of the repository with the old `pinger.py` from commit `7b99efe`, `test_AC3_reply_slower_than_the_timeout_counts_as_down` failed.
+
 ## 1. Acceptance criteria
 
 All tests are in `tests/test_acceptance.py` and are named after their criterion. Tests marked *(real ping)* run the Windows `ping` command. They only ping `127.0.0.1` (this computer) and `192.0.2.x`, a range reserved for documentation (RFC 5737) that no real device uses. The other tests use a fake ping with fixed answers, so they give the same result on any network.
