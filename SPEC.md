@@ -192,3 +192,39 @@ An AI-assisted review of this specification identified several points that neede
 4. **Consistent testing:** Each numbered requirement has a corresponding Given / When / Then acceptance criterion.
 5. **Optional GUI:** A graphical interface is an optional enhancement rather than a promised feature or a core acceptance requirement.
 6. **Output details:** Input format, terminal output or GUI output, CSV columns, invalid-entry handling, and summary counts are defined explicitly.
+
+## 8. Changes Since Approval (added 16 November 2026)
+
+The approved specification above is unchanged. This section records what changed during implementation, and why. None of the changes removes or weakens a requirement or acceptance criterion.
+
+### Additions
+
+1. **A Tkinter GUI was built alongside the command-line interface.** The specification made the GUI an optional enhancement, to be considered after the required features passed. It was started earlier, in Milestone 2, because the team wanted a desktop interface. The command-line interface is still the required interface. Every requirement works there, and the GUI uses the same code underneath. The GUI also adds a "Performance test (R5)" button, which runs the AC5 procedure, and an "Export CSV..." button (R6).
+2. **Linux support was added.** Windows is still the required platform, and all acceptance criteria were tested there. The app was also developed and tested on Ubuntu Linux, using the Linux `ping` command.
+3. **A configurable timeout.** The default is 1000 ms, and it can be changed with `--timeout MS` on the command line. R3 and R5 refer to "the configured timeout" but did not give a value.
+4. **pytest for the tests.** The application still uses only the Python standard library. pytest is listed in `requirements.txt` and is needed only to run the tests.
+
+### Clarifications of existing requirements
+
+5. **R3, late replies:** a reply that arrives *after* the configured timeout counts as DOWN. Windows `ping` sometimes prints replies after its `-w` timeout has passed, and the first version counted them as UP. This was Bug 2 in TESTING.md. The fix follows the wording of R3: DOWN when no reply arrives before the timeout.
+6. **R3, "Destination host unreachable":** a router sometimes answers on behalf of an address that does not exist. Windows `ping` reports this with exit code 0, but it is not a reply from the target, so it counts as DOWN.
+7. **R4, very fast replies:** Windows reports replies faster than 1 ms as `time<1ms`. The app records these as 1 ms, so they can be up to 1 ms too high. TESTING.md, section 2.1, measures this.
+8. **R1, the input file:**
+   - Blank lines are ignored, and spaces around an address are removed.
+   - Invalid lines count toward the 20-entry limit.
+   - A file with more than 20 entries is rejected with an error rather than cut short.
+   - A file with no entries, a missing file or a file that is not text is rejected with a clear message.
+   - Files saved by Windows Notepad (UTF-8 with a byte-order mark) are accepted.
+9. **R2, invalid formats:** an entry is INVALID if Python's `ipaddress` module rejects it. This covers octets above 255, the wrong number of octets, letters, leading zeros (`192.168.01.5`), IPv6 addresses and empty values. Each INVALID entry is shown with the reason.
+10. **R6, the CSV file:** the columns are exactly `ip_address,status,response_time_ms`, as in Section 5. The file is saved as UTF-8 with a byte-order mark so that Excel opens it correctly.
+
+### Answers to the open questions in Section 7
+
+- **GUI:** yes, it was practical. See change 1.
+- **The 20-address test list for AC5:** `data/performance_targets.txt`. It holds 20 valid addresses on the team's own home network: the router, the team's devices, and unused addresses. The unused addresses never reply, so they test the slowest case.
+- **Versions used for implementation and testing** (Section 2 said these would be recorded):
+  - Windows 11 Home (10.0.26200), Python 3.14.5
+  - Ubuntu 24.04.4 LTS, Python 3.12.3
+  - pytest 9.2.0
+
+  The results are in README.md and TESTING.md.
