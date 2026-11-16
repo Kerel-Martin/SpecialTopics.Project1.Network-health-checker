@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Network Health Checker — Final Report</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 18mm 18mm 18mm;
+    @bottom-center { content: counter(page) " / " counter(pages); font: 9pt "DejaVu Sans", Arial, sans-serif; color: #555; }
+  }
+  body { font-family: "DejaVu Serif", "Liberation Serif", Georgia, serif; font-size: 10pt; line-height: 1.38; color: #111; margin: 0; }
+  h1 { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 18pt; margin: 0 0 2mm; }
+  h2 { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 12.5pt; margin: 5mm 0 1.5mm; border-bottom: 1px solid #999; padding-bottom: 0.6mm; }
+  h3 { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 10.5pt; margin: 3.5mm 0 1mm; }
+  p { margin: 0 0 2mm; text-align: justify; }
+  ul { margin: 0 0 2mm; padding-left: 5mm; }
+  li { margin-bottom: 0.8mm; text-align: justify; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; }
+  .meta { font-family: "DejaVu Sans", Arial, sans-serif; font-size: 9.5pt; color: #333; margin-bottom: 3mm; }
+  table { border-collapse: collapse; width: 100%; margin: 1.5mm 0 3mm; font-size: 8.7pt; line-height: 1.3; page-break-inside: avoid; }
+  th, td { border: 1px solid #aaa; padding: 1mm 1.6mm; vertical-align: top; text-align: left; }
+  th { background: #e9edf2; font-family: "DejaVu Sans", Arial, sans-serif; }
+  td.pass { font-weight: bold; color: #0a6b2a; white-space: nowrap; }
+  .caption { font-size: 8.8pt; color: #333; margin: -1.5mm 0 3mm; }
+  figure { margin: 2mm 0 1mm; page-break-inside: avoid; }
+  .refs li { font-size: 8.8pt; margin-bottom: 0.6mm; text-align: left; }
+  .appendix { page-break-before: always; }
+  .small { font-size: 8.8pt; }
+</style>
+</head>
+<body>
+
+<h1>Network Health Checker — Final Report</h1>
+<div class="meta">
+  Special Topics, Project 1 &middot; Kerel Martin Fahim and Cynthia Ziadeh &middot; 16 November 2026<br>
+  Repository: <code>https://github.com/Kerel-Martin/SpecialTopics.Project1.Network-health-checker</code>
+</div>
+
+<h2>1. Problem and goal</h2>
+<p>To see which devices on a small network respond, you usually ping each address by hand, one at a time. With many devices this is slow, and the results are easy to lose. Our goal, set in the approved <code>SPEC.md</code>, was a Python application for students and home users. It loads a text file of up to 20 candidate IPv4 addresses (R1) and marks the invalid ones (R2). It pings every valid address and reports it as UP or DOWN (R3) with its response time (R4). A scan of 20 addresses must finish within 5 seconds (R5). The results can be exported to CSV (R6), and the app prints summary counts (R7). The required platform is Windows, and the required interface is the command line.</p>
+<p>Ping uses ICMP echo requests and replies [8]. A DOWN result therefore means only that no reply arrived within the timeout, not that the device is off: a firewall may simply drop ping. Discovering devices automatically, scanning ports, and monitoring continuously are out of scope.</p>
+
+<h2>2. Design</h2>
+<figure>
+<svg viewBox="0 0 680 262" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="DejaVu Sans, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker>
+  </defs>
+  <style>
+    .b { fill: #eef3f9; stroke: #3b5b80; stroke-width: 1.2; }
+    .o { fill: #f6f1e7; stroke: #8a6d2f; stroke-width: 1.2; }
+    .t { font-size: 11px; font-weight: bold; fill: #111; }
+    .s { font-size: 9.5px; fill: #333; }
+    .l { stroke: #333; stroke-width: 1.2; fill: none; marker-end: url(#a); }
+    .d { stroke: #333; stroke-width: 1.2; fill: none; stroke-dasharray: 4 3; marker-end: url(#a); }
+    .lab { font-size: 9px; fill: #444; font-style: italic; }
+  </style>
+  <!-- row 1 -->
+  <rect class="o" x="6" y="16" width="112" height="46" rx="5"/>
+  <text class="t" x="62" y="35" text-anchor="middle">targets.txt</text>
+  <text class="s" x="62" y="50" text-anchor="middle">1 address per line</text>
+
+  <rect class="b" x="148" y="16" width="146" height="46" rx="5"/>
+  <text class="t" x="221" y="35" text-anchor="middle">loader.py (R1)</text>
+  <text class="s" x="221" y="50" text-anchor="middle">read file, 1–20 entries</text>
+
+  <rect class="b" x="324" y="16" width="146" height="46" rx="5"/>
+  <text class="t" x="397" y="35" text-anchor="middle">validator.py (R2)</text>
+  <text class="s" x="397" y="50" text-anchor="middle">ipaddress.IPv4Address</text>
+
+  <rect class="b" x="500" y="16" width="174" height="46" rx="5"/>
+  <text class="t" x="587" y="35" text-anchor="middle">scanner.py</text>
+  <text class="s" x="587" y="50" text-anchor="middle">thread pool: all pings at once</text>
+
+  <path class="l" d="M118,39 L146,39"/>
+  <path class="l" d="M294,39 L322,39"/>
+  <path class="l" d="M470,39 L498,39"/>
+  <text class="lab" x="484" y="30" text-anchor="middle">VALID</text>
+
+  <!-- row 2 -->
+  <rect class="b" x="500" y="106" width="174" height="46" rx="5"/>
+  <text class="t" x="587" y="125" text-anchor="middle">pinger.py (R3, R4)</text>
+  <text class="s" x="587" y="140" text-anchor="middle">"TTL=" → reply; time ≤ timeout</text>
+
+  <rect class="b" x="262" y="106" width="196" height="46" rx="5"/>
+  <text class="t" x="360" y="125" text-anchor="middle">ScanResult list</text>
+  <text class="s" x="360" y="140" text-anchor="middle">UP / DOWN / INVALID + ms (R7)</text>
+
+  <rect class="b" x="6" y="106" width="214" height="46" rx="5"/>
+  <text class="t" x="113" y="125" text-anchor="middle">cli.py  /  gui.py</text>
+  <text class="s" x="113" y="140" text-anchor="middle">results table + summary counts</text>
+
+  <path class="l" d="M587,62 L587,104"/>
+  <path class="l" d="M498,129 L460,129"/>
+  <text class="lab" x="479" y="122" text-anchor="middle">result</text>
+  <path class="l" d="M262,129 L222,129"/>
+  <path class="d" d="M397,62 L397,84 L330,84 L330,104"/>
+  <text class="lab" x="300" y="80" text-anchor="middle">INVALID: never pinged</text>
+
+  <!-- row 3 -->
+  <rect class="o" x="500" y="196" width="174" height="50" rx="5"/>
+  <text class="t" x="587" y="214" text-anchor="middle">operating-system ping</text>
+  <text class="s" x="587" y="228" text-anchor="middle">Windows: ping -n 1 -w ms</text>
+  <text class="s" x="587" y="240" text-anchor="middle">Linux: ping -c 1 -W s</text>
+  <path class="l" d="M575,152 L575,194"/>
+  <path class="l" d="M599,194 L599,154"/>
+  <text class="lab" x="555" y="178" text-anchor="end">subprocess</text>
+  <text class="lab" x="606" y="178">text output</text>
+
+  <rect class="b" x="262" y="196" width="196" height="50" rx="5"/>
+  <text class="t" x="360" y="214" text-anchor="middle">performance.py (R5)</text>
+  <text class="s" x="360" y="228" text-anchor="middle">scan 3×, time each run,</text>
+  <text class="s" x="360" y="240" text-anchor="middle">PASS only if 20 valid and ≤ 5 s</text>
+  <path class="d" d="M458,212 L486,212 L486,52 L498,52"/>
+
+  <rect class="b" x="6" y="196" width="214" height="50" rx="5"/>
+  <text class="t" x="113" y="214" text-anchor="middle">exporter.py (R6)</text>
+  <text class="s" x="113" y="228" text-anchor="middle">ip_address,status,</text>
+  <text class="s" x="113" y="240" text-anchor="middle">response_time_ms → .csv</text>
+  <path class="l" d="M113,152 L113,194"/>
+  <text class="lab" x="120" y="178">Export CSV / --csv</text>
+</svg>
+</figure>
+<p class="caption"><b>Figure 1.</b> How a scan flows through the modules in <code>src/network_health_checker/</code>. Solid arrows show data; dashed arrows show INVALID entries skipping ping, and the R5 test calling the scanner repeatedly.</p>
+
+<p><b>How it works.</b> <code>loader.py</code> reads the file and enforces the limit of 1–20 entries. It skips blank lines and accepts files saved by Windows Notepad. <code>validator.py</code> checks each entry with Python's <code>ipaddress</code> module [1], which rejects octets above 255, the wrong number of octets, text and leading zeros. <code>scanner.py</code> passes only VALID entries to a <code>ThreadPoolExecutor</code> [3], so all the pings wait in parallel. A scan of 20 addresses therefore takes about one timeout (1 s by default) rather than one timeout per address.</p>
+<p><code>pinger.py</code> runs the operating system's own <code>ping</code> through <code>subprocess</code> [2, 6, 7]. We chose this over raw ICMP sockets, which need administrator rights. The cost is that the program must read ping's text output. It counts a reply only if the output contains a <code>TTL=</code> value. This holds in any system language, and it avoids a Windows trap: a router answering "Destination host unreachable" makes <code>ping</code> exit with code 0. The response time is read from the reply line, and a reply slower than the timeout counts as DOWN (the fix for Bug 2).</p>
+<p>The command-line interface (<code>cli.py</code>, the interface the spec requires) and the optional Tkinter window (<code>gui.py</code>) [5] share the same code. The GUI runs scans in a background thread and receives the results through a queue, so the window never freezes. Its buttons run the AC5 test (<code>performance.py</code>) and the CSV export (<code>exporter.py</code>, using Python's <code>csv</code> module [4]). The ping function is passed in as a parameter, so tests can replace it with a fake that gives fixed answers. Real-ping tests use only <code>127.0.0.1</code> and <code>192.0.2.x</code>, a range reserved for documentation that never replies [9]. The application is 717 lines of standard-library Python; the tests are 1,193 lines.</p>
+
+<h2>3. Results</h2>
+<p>The full suite of 89 pytest tests, 26 of them acceptance tests named <code>test_AC1_…</code> to <code>test_AC7_…</code>, passed on <b>Windows 11 Home</b> (Python 3.14.5, 12 November 2026; 6 runs, no skips) and on <b>Ubuntu 24.04.4</b> (Python 3.12.3, 14 November 2026). Details are in <code>TESTING.md</code>.</p>
+
+<table>
+<tr><th style="width:15%">Criterion</th><th>Evidence</th><th style="width:7%">Result</th></tr>
+<tr><td>AC1 Input file (R1)</td><td>Files with 1 and with exactly 20 entries are loaded and scanned. A file with 21 entries is rejected, and from the command line nothing is pinged (exit code 1, "maximum is 20").</td><td class="pass">PASS</td></tr>
+<tr><td>AC2 Invalid addresses (R2)</td><td><code>192.168.1.999</code> is reported INVALID, and a recorder in the fake ping shows it is never pinged. Seven more formats are also INVALID with 0 pings (<code>10.0.0.256</code>, <code>192.168.1</code>, <code>1.2.3.4.5</code>, <code>hello</code>, <code>192.168.01.5</code>, <code>-1.2.3.4</code>, <code>::1</code>).</td><td class="pass">PASS</td></tr>
+<tr><td>AC3 UP / DOWN (R3)</td><td>Real ping: <code>127.0.0.1</code> UP, <code>192.0.2.1</code> DOWN. A 43 ms reply with a 10 ms timeout is DOWN. "Destination host unreachable" is DOWN. On the home network, the second laptop (<code>192.168.18.20</code>) was DOWN until a Windows firewall rule allowed ping, then UP at 3.05 ms.</td><td class="pass">PASS</td></tr>
+<tr><td>AC4 Response time (R4)</td><td>An UP address shows a number in ms ("2.4 ms"); a real loopback ping gives a numeric time. A DOWN address shows "No reply".</td><td class="pass">PASS</td></tr>
+<tr><td>AC5 Performance (R5)</td><td>3 runs of 20 valid addresses on the home network, each well under 5 s (Table 2). Two automated tests check the same with a slowest-case fake and with real pings to <code>192.0.2.1–20</code>.</td><td class="pass">PASS</td></tr>
+<tr><td>AC6 CSV export (R6)</td><td>The CSV equals the SPEC.md example exactly: <code>ip_address,status,response_time_ms</code>, then UP 2.4, UP 5.8, DOWN (empty), INVALID (empty). Checked through <code>--csv</code> and the GUI button, and with a real export of the sample file.</td><td class="pass">PASS</td></tr>
+<tr><td>AC7 Summary counts (R7)</td><td>The SPEC.md example gives 4 entries, 3 checked, 2 UP, 1 DOWN, 1 INVALID. A hand count of <code>data/sample_targets.txt</code> (12 entries, 8 valid, 4 invalid) matches the displayed counts.</td><td class="pass">PASS</td></tr>
+</table>
+<p class="caption"><b>Table 1.</b> Evidence for each acceptance criterion.</p>
+
+<table>
+<tr><th>Platform and date</th><th>How it was run</th><th>Run 1</th><th>Run 2</th><th>Run 3</th><th>UP / DOWN</th></tr>
+<tr><td>Ubuntu 24.04, 29 Oct 2026</td><td>Command line (printed scan time)</td><td>1.01 s</td><td>1.01 s</td><td>1.00 s</td><td>5 / 15</td></tr>
+<tr><td>Ubuntu 24.04, 9 Nov 2026</td><td>GUI "Performance test (R5)" button</td><td>1.03 s</td><td>1.01 s</td><td>1.02 s</td><td>4 / 16</td></tr>
+<tr><td>Windows 11, 10 Nov 2026</td><td>Command line (printed scan time)</td><td>0.99 s</td><td>0.80 s</td><td>0.88 s</td><td>2 / 18</td></tr>
+<tr><td>Windows 11, 10 Nov 2026</td><td>PowerShell <code>Measure-Command</code>, including Python start-up</td><td>1.19 s</td><td>0.98 s</td><td>1.02 s</td><td>2 / 18</td></tr>
+</table>
+<p class="caption"><b>Table 2.</b> AC5 measurements with <code>data/performance_targets.txt</code>: 20 valid addresses on our home network (192.168.18.0/24, a private range [10]), 1000 ms timeout, limit 5 s. Unused addresses never reply, so these runs include the slowest case. An earlier Windows attempt (0.22–0.27 s) was <b>rejected as invalid</b>: the laptop was on another network, and the gateway refused every ping at once instead of letting it time out.</p>
+
+<h3>Validation against a trusted tool</h3>
+<p>We compared the app with tools whose answers we trust, on Windows (TESTING.md, section 2): Windows' own <code>ping</code>, and Windows' IPv4 parser through <code>socket.inet_pton</code> [11].</p>
+<table>
+<tr><th>Check</th><th>Compared with</th><th>Error / agreement</th></tr>
+<tr><td>Response time read from the same ping (20 pings each to <code>127.0.0.1</code>, <code>8.8.8.8</code>, <code>1.1.1.1</code>)</td><td>The time in ping's own statistics block</td><td>0 ms for every reply ≥ 1 ms. +1 ms for loopback replies, because <code>time&lt;1ms</code> is recorded as 1 ms by design.</td></tr>
+<tr><td>Concurrent scan vs a separate ping straight afterwards (20 pairs per address)</td><td>Windows <code>ping</code></td><td>Median difference within ±1 ms for all three addresses. The largest single difference (22 ms) is network jitter between two separate packets.</td></tr>
+<tr><td>UP / DOWN status (5 rounds × 6 addresses)</td><td>Windows <code>ping</code> statistics</td><td>30 of 30 agree</td></tr>
+<tr><td>IPv4 validation (18 chosen cases + 20,000 random strings)</td><td><code>socket.inet_pton</code></td><td>0 disagreements in 20,018 strings</td></tr>
+</table>
+<p class="caption"><b>Table 3.</b> Validation results.</p>
+<p><b>Bugs found and fixed</b> (bug log in TESTING.md, section 3). <b>Bug 1:</b> under pytest on Windows, GUI tests were skipped at random, and the AI-written skip message wrongly blamed "no display". The cause was pytest's file-level output capture; the fix was <code>--capture=sys</code> in <code>pytest.ini</code> [12]. <b>Bug 2:</b> a reply arriving <i>after</i> the timeout was reported as UP, which contradicts R3. With <code>--timeout 10</code>, <code>8.8.8.8</code> showed "UP 43 ms", because Windows <code>ping -w</code> still prints late replies. The bug was in AI-written code, and it was fixed by applying the timeout to the measured time. Its regression test fails on the old code and passes on the new code; we checked this on both operating systems.</p>
+
+<h2>4. Limitations</h2>
+<ul>
+<li><b>DOWN does not mean offline.</b> Windows blocks incoming ping by default. Our second laptop was DOWN until we added a firewall rule [13], and another device (<code>192.168.18.17</code>) answered at the network level but never replied to ping.</li>
+<li><b>One ping per address.</b> There are no retries, so a single lost packet gives DOWN, and the response time is a single sample. On Wi-Fi, power saving made times vary from about 3 ms to 397 ms, and a device that was asleep (<code>192.168.18.225</code>) was DOWN in one scan and UP in a later one.</li>
+<li><b>Accuracy:</b> on Windows, replies faster than 1 ms are recorded as 1 ms (an error of at most 1 ms, measured). On Linux, <code>ping -W</code> takes whole seconds, so a timeout below 1 s still waits up to 1 s. Late replies are still filtered out, but the scan is no faster.</li>
+<li><b>It depends on ping's text output.</b> We tested English Windows, a German Windows sample and Linux iputils <code>ping</code>. Other languages or ping versions might format replies differently. macOS is supported in the code but was never tested.</li>
+<li><b>The performance figure is local.</b> AC5 was measured on one home network with exactly 20 addresses. As SPEC.md says, it is not a guarantee for every network.</li>
+<li><b>Scope:</b> IPv4 only, at most 20 addresses, no continuous monitoring. The GUI was tested with automated smoke tests and by hand, not with real users.</li>
+</ul>
+
+<h2>5. Discussion</h2>
+<p><b>What we learned.</b> The clearest lesson was the gap between working code and correct code. Bug 2 sat in code that had passed every test and many real scans for two weeks. It only showed up when we deliberately tried an extreme case (a 10 ms timeout) and compared the app with Windows' own <code>ping</code>. Tests check only what you think of testing, and comparing with an independent tool finds what you did not think of. We learned the same about measurements: an AC5 run that was too fast (0.25 s against a 1 s timeout) was a warning sign, not good news. Recording the test conditions is what showed the run was invalid. We also learned the difference between a valid address and a reachable one, why a firewall can hide a device from ping, and how much small platform differences matter: Windows <code>ping</code> exiting with 0 for unreachable hosts, <code>py</code> versus <code>python3</code>, Tkinter missing by default on Ubuntu, and pytest's output capture interfering with Tkinter. Finally, an AI assistant produced code quickly, but it also introduced both bugs we found. We had to understand and verify every part ourselves.</p>
+<p><b>What we would do differently.</b> We would write the acceptance tests in pytest, named after AC1–AC7, from the first prototype instead of adding them in Milestone 3, and compare with a reference tool early. That would have caught Bug 2 a milestone sooner. We would put the GUI in the specification from the start instead of recording it as a change afterwards. We would send two or three pings per address and report packet loss, so that Wi-Fi devices are not marked DOWN after one lost packet. And we would share the implementation work, and the commits, more evenly between the two of us. Most of the commit history is Kerel's, and Cynthia's commits come mainly from the Windows testing in Milestones 2 and 3.</p>
+
+<h2>References</h2>
+<ol class="refs">
+<li>Python Software Foundation, "ipaddress — IPv4/IPv6 manipulation library," <i>Python 3 Documentation</i>. https://docs.python.org/3/library/ipaddress.html</li>
+<li>Python Software Foundation, "subprocess — Subprocess management," <i>Python 3 Documentation</i>. https://docs.python.org/3/library/subprocess.html</li>
+<li>Python Software Foundation, "concurrent.futures — Launching parallel tasks," <i>Python 3 Documentation</i>. https://docs.python.org/3/library/concurrent.futures.html</li>
+<li>Python Software Foundation, "csv — CSV File Reading and Writing," <i>Python 3 Documentation</i>. https://docs.python.org/3/library/csv.html</li>
+<li>Python Software Foundation, "tkinter — Python interface to Tcl/Tk," <i>Python 3 Documentation</i>. https://docs.python.org/3/library/tkinter.html</li>
+<li>Microsoft, "ping," <i>Windows Commands reference</i>, Microsoft Learn. https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/ping</li>
+<li>"ping(8) — Linux manual page" (iputils). https://man7.org/linux/man-pages/man8/ping.8.html</li>
+<li>J. Postel, "Internet Control Message Protocol," RFC 792, IETF, Sept. 1981. https://www.rfc-editor.org/rfc/rfc792</li>
+<li>J. Arkko, M. Cotton and L. Vegoda, "IPv4 Address Blocks Reserved for Documentation," RFC 5737, IETF, Jan. 2010. https://www.rfc-editor.org/rfc/rfc5737</li>
+<li>Y. Rekhter, B. Moskowitz, D. Karrenberg, G. J. de Groot and E. Lear, "Address Allocation for Private Internets," RFC 1918, IETF, Feb. 1996. https://www.rfc-editor.org/rfc/rfc1918</li>
+<li>Python Software Foundation, "socket — Low-level networking interface" (<code>inet_pton</code>), <i>Python 3 Documentation</i>. https://docs.python.org/3/library/socket.html</li>
+<li>pytest developers, "How to capture stdout/stderr output," <i>pytest documentation</i>. https://docs.pytest.org/en/stable/how-to/capture-stdout-stderr.html</li>
+<li>Microsoft, "New-NetFirewallRule," <i>PowerShell NetSecurity module reference</i>, Microsoft Learn. https://learn.microsoft.com/en-us/powershell/module/netsecurity/new-netfirewallrule</li>
+</ol>
+
+<div class="appendix">
+<h2>Appendix A — AI Use Disclosure</h2>
+<p class="small">The same disclosure is at the top of <code>AI_USE.md</code> in the repository, followed by a detailed log of every session. AI output is not cited as a source in this report.</p>
+
+<h3>A.1 Tools used</h3>
+<ul class="small">
+<li><b>ChatGPT (OpenAI)</b>, Milestone 1: choosing and narrowing the project idea, and drafting the proposal, SPEC.md and its AI critique.</li>
+<li><b>Claude Code (Anthropic, model Claude Opus 5.5)</b>, a coding assistant that runs in the terminal, Milestones 2–3 and the final submission: writing code and tests, running tests and real network checks, writing documentation, fixing bugs, Git operations, and drafting this report.</li>
+</ul>
+
+<h3>A.2 How they were used</h3>
+<p class="small">ChatGPT was used in conversation, and its drafts were edited by the team before SPEC.md was approved. Claude Code worked directly in the repository on both laptops (Ubuntu and Windows 11). It read files, wrote code, ran the tests and the app, pinged devices on our own home network, and committed and pushed when asked. We set the tasks, chose the features and the test addresses, set up the second laptop and its firewall rule, ran the GUI, reviewed the results and decided when to commit.</p>
+
+<h3>A.3 Significant prompts (quoted, spelling unchanged)</h3>
+<ul class="small">
+<li>"implement a small, working first prototype that loads a text file containing up to 20 candidate IPv4 addresses and validates them … If they conflict, explain the issue before changing the specification … Do not claim that pinging, CSV export, or the five-second performance target works unless implemented and tested."</li>
+<li>"i added some ip , a valid ip and an invalid ip, both gave valid ip and it wrote not checked(ping not implemented yet) i want the ping to work"</li>
+<li>"im trying to ping manually from this laptop … to my second laptop … it is ot working"; later: "done, added the firewall rule, test it now"</li>
+<li>"so r5 is done now cz we did the tests" (the AI answered that it was not yet done, then carried out AC5); "can u do R5 inside the gui? a button whe u press that ping 3 times and give u back the feedback"</li>
+<li>"do R6 (add a button on gui that do R6)"</li>
+<li>Milestone 3 (summarised from the log; not saved word for word): write pytest tests named after each acceptance criterion, validate against a trusted tool, and write TESTING.md.</li>
+<li>Final: "check what he ask for and do the report"</li>
+</ul>
+
+<h3>A.4 AI-generated contributions</h3>
+<table class="small">
+<tr><th style="width:32%">File</th><th>Generated by Claude Code</th></tr>
+<tr><td><code>loader.py</code>, <code>validator.py</code></td><td><code>load_targets</code>, <code>InputFileError</code>; <code>validate_entry</code>, <code>validate_entries</code>, <code>count_summary</code></td></tr>
+<tr><td><code>pinger.py</code></td><td><code>build_ping_command</code>, <code>parse_ping_output</code>, <code>ping</code>, and the Bug 2 fix</td></tr>
+<tr><td><code>scanner.py</code>, <code>performance.py</code>, <code>exporter.py</code></td><td><code>scan</code>, <code>summarize</code>, <code>describe_response</code>; <code>run_performance_test</code>, <code>describe_report</code>; <code>export_csv</code></td></tr>
+<tr><td><code>cli.py</code>, <code>gui.py</code>, <code>main.py</code>, <code>__init__.py</code></td><td>The command-line interface, the Tkinter window and the entry point</td></tr>
+<tr><td><code>tests/</code>, <code>pytest.ini</code></td><td>All tests, including <code>test_acceptance.py</code>, <code>fakes.py</code> and <code>validate_against_windows_ping.py</code></td></tr>
+<tr><td>Documentation</td><td>The Milestone 2+ sections of README.md, TESTING.md (from our test runs), the AI_USE.md entries, SPEC.md Section 8, and the draft of this report</td></tr>
+</table>
+<p class="small">Written by the team: the project choice, the proposal, SPEC.md Sections 1–7 (with ChatGPT's help), all scope and submission decisions, and the hardware and network setup for testing.</p>
+
+<h3>A.5 Corrections and verification</h3>
+<table class="small">
+<tr><th style="width:30%">What was wrong</th><th style="width:33%">How it was found</th><th>How it was fixed</th></tr>
+<tr><td>Bug 2: a late reply was counted as UP (AI-written <code>pinger.py</code>)</td><td>Testing AC3 with <code>--timeout 10</code> and comparing with raw Windows <code>ping</code></td><td>The timeout is now applied to the measured time. A regression test fails on the old code and passes on the new code (checked on Windows and Linux).</td></tr>
+<tr><td>Bug 1: random GUI test skips under pytest, with a misleading AI-written skip message</td><td>Running the suite repeatedly and comparing capture modes</td><td><code>--capture=sys</code> and a skip message that shows the real error. After the fix, 5 runs with 0 skips.</td></tr>
+<tr><td>The first CLI/GUI tests depended on the contents of the sample data file</td><td>Noticed when we edited <code>sample_targets.txt</code></td><td>The tests now use temporary files and a fake ping</td></tr>
+<tr><td>An AC5 run on Windows was faster than the timeout allows</td><td>Checking the raw <code>ping</code> output (wrong network)</td><td>The run was recorded as invalid and repeated on the home network</td></tr>
+<tr><td>The README's <code>py -m venv</code> failed on Linux</td><td>An error reported by the team</td><td>The Linux steps use <code>python3</code>, with a note in the README</td></tr>
+</table>
+<p class="small"><b>How the tests themselves were checked.</b> Expected values come from SPEC.md, hand counts and real <code>ping</code> output, never from the program's own output. Real-ping tests use only addresses whose answers are known (<code>127.0.0.1</code> and <code>192.0.2.x</code>). The suite was run repeatedly on both operating systems, and the app was validated against Windows <code>ping</code> and <code>inet_pton</code> (Table 3).</p>
+</div>
+
+</body>
+</html>

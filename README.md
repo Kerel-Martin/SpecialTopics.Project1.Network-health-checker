@@ -54,6 +54,7 @@ README.md             Proposal and how to run the prototype
 SPEC.md               Approved specification (unchanged)
 AI_USE.md             AI tool usage log
 TESTING.md            Acceptance test results, validation against Windows ping, bug log
+report/               Final report: report.pdf, and report.html (its source, printed to PDF with Chrome)
 requirements.txt      pytest, for the tests only (the app uses only the standard library)
 pytest.ini            pytest settings
 .gitignore            Ignores .venv/, __pycache__/, .env and other local files
